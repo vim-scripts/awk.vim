@@ -1,8 +1,8 @@
 " Vim indent file
 " Language:        AWK Script
 " Maintainer:      Clavelito <maromomo@hotmail.com>
-" Id:              $Date: 2013-01-03 20:30:29+09 $
-"                  $Revision: 1.14 $
+" Id:              $Date: 2013-01-17 02:54:16+09 $
+"                  $Revision: 1.16 $
 
 
 if exists("b:did_indent")
@@ -34,7 +34,7 @@ function GetAwkIndent()
   let cline = getline(v:lnum)
 
   let ind = s:BackSlashLineIndent(pline, line, ind)
-  if line =~ '\\$'
+  if line =~ '\\$' || line =~ '^\s*#' && cline =~ '^\s*$'
     return ind
   endif
 
@@ -119,11 +119,8 @@ function s:CurrentLineIndent(cline, line, lnum, pline, pnum, ind)
     endif
   elseif a:cline =~ '^\s*else\>'
     let ind = s:CurrentElseIndent(a:line, a:lnum, a:pline, a:pnum)
-  elseif a:cline =~ '^\s*#'
-    let cind = indent(v:lnum)
-    if cind < ind
-      let ind = cind
-    endif
+  elseif a:cline =~ '^#'
+    let ind = 0
   endif
 
   return ind
