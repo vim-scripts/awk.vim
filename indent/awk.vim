@@ -1,8 +1,8 @@
 " Vim indent file
 " Language:        AWK Script
 " Maintainer:      Clavelito <maromomo@hotmail.com>
-" Id:              $Date: 2013-01-17 02:54:16+09 $
-"                  $Revision: 1.16 $
+" Id:              $Date: 2013-02-10 20:28:09+09 $
+"                  $Revision: 1.18 $
 
 
 if exists("b:did_indent")
@@ -54,7 +54,7 @@ function s:BackSlashLineIndent(pline, line, ind)
   elseif a:pline =~ '\\$' && a:line !~ '\\$'
     let ind = ind - &sw
   endif
-  if a:line =~ '^\s*\%(if\|else\s\+if\|for\|while\|function\)\>'
+  if a:line =~# '^\s*\%(if\|else\s\+if\|for\|while\|function\)\>'
         \ && a:line =~ '\\$'
     let ind = ind + &sw
   endif
@@ -65,14 +65,14 @@ endfunction
 function s:MorePrevLineIndent(pline, pnum, line, lnum, ind)
   let ind = a:ind
   let [pline, pnum] = s:PreMorePrevLine(a:pline, a:pnum, a:line, a:lnum)
-  while pline =~ '^\s*\%(if\|else\s\+if\|for\|while\)\s*(.*)\s*\%(#.*\)\=$'
-        \ || pline =~ '^\s*}\=\s*else\>\s*\%(#.*\)\=$'
-        \ || pline =~ '^\s*do\>\s*\%(#.*\)\=$'
-        \ || pline =~ '^\s*}\s*\%(else\s\+if\|while\)\s*(.*)\s*\%(#.*\)\=$'
+  while pline =~# '^\s*\%(if\|else\s\+if\|for\|while\)\s*(.*)\s*\%(#.*\)\=$'
+        \ || pline =~# '^\s*}\=\s*else\>\s*\%(#.*\)\=$'
+        \ || pline =~# '^\s*do\>\s*\%(#.*\)\=$'
+        \ || pline =~# '^\s*}\s*\%(else\s\+if\|while\)\s*(.*)\s*\%(#.*\)\=$'
     let ind = indent(pnum)
-    if pline =~ '^\s*}\=\s*else\>'
+    if pline =~# '^\s*}\=\s*else\>'
       let [pline, pnum] = s:GetIfLine(pline, pnum)
-    elseif pline =~ '^\s*}\=\s*while\>'
+    elseif pline =~# '^\s*}\=\s*while\>'
       let [pline, pnum] = s:GetDoLine(pline, pnum, pnum)
     endif
     let [pline, pnum] = s:JoinBackSlashLine(pline, pnum, 1)
@@ -83,15 +83,15 @@ endfunction
 
 function s:PrevLineIndent(line, lnum, ind)
   let ind = a:ind
-  if a:line =~ '^\s*\%(if\|else\s\+if\|for\)\s*(.*)\s*\%(#.*\)\=$'
-        \ || a:line =~ '^\s*\%(else\|do\)\s*\%(#.*\)\=$'
-        \ || a:line =~ '^\s*}\s*else\>'
+  if a:line =~# '^\s*\%(if\|else\s\+if\|for\)\s*(.*)\s*\%(#.*\)\=$'
+        \ || a:line =~# '^\s*\%(else\|do\)\s*\%(#.*\)\=$'
+        \ || a:line =~# '^\s*}\s*else\>'
         \ || a:line =~ '{\s*\%(.*\)\=\%(#.*\)\=$'
         \ && s:NoClosedBracePair(a:lnum)
-        \ || a:line =~ '^\s*while\s*(.*)\s*\%(#.*\)\=$'
+        \ || a:line =~# '^\s*while\s*(.*)\s*\%(#.*\)\=$'
         \ && get(s:GetDoLine(a:line, a:lnum, a:lnum), 1) == a:lnum
     let ind = indent(a:lnum) + &sw
-  elseif a:line =~ '^\s*function\s\+\S\+\s*(.*\\.*)\s*\%(#.*\)\=$'
+  elseif a:line =~# '^\s*function\s\+\S\+\s*(.*\\.*)\s*\%(#.*\)\=$'
     let ind = indent(a:lnum)
   elseif a:line =~ '\S\+\s*}\s*\%(#.*\)\=$' && indent(a:lnum) == ind
     let snum = get(s:GetBracePairLine(a:line, a:lnum), 1)
@@ -109,15 +109,15 @@ function s:CurrentLineIndent(cline, line, lnum, pline, pnum, ind)
     let ind = indent(get(s:GetBracePairLine(a:cline, v:lnum), 1))
   elseif a:cline =~ '^\s*{\s*\%(#.*\)\=$'
         \ && (a:line
-        \ =~ '^\s*\%(if\|else\s\+if\|while\|for\)\s*(.*)\s*\%(#.*\)\=$'
-        \ || a:line =~ '^\s*\%(else\|do\)\s*\%(#.*\)\=$')
+        \ =~# '^\s*\%(if\|else\s\+if\|while\|for\)\s*(.*)\s*\%(#.*\)\=$'
+        \ || a:line =~# '^\s*\%(else\|do\)\s*\%(#.*\)\=$')
     let ind = ind - &sw
-  elseif a:cline =~ '^\s*while\>'
+  elseif a:cline =~# '^\s*while\>'
     let snum = get(s:GetDoLine(a:line, a:lnum, v:lnum), 1)
     if snum != a:lnum
       let ind = indent(snum)
     endif
-  elseif a:cline =~ '^\s*else\>'
+  elseif a:cline =~# '^\s*else\>'
     let ind = s:CurrentElseIndent(a:line, a:lnum, a:pline, a:pnum)
   elseif a:cline =~ '^#'
     let ind = 0
@@ -156,9 +156,9 @@ endfunction
 
 function s:PreMorePrevLine(pline, pnum, line, lnum)
   let lnum = a:lnum
-  if a:line =~ '^\s*}\=\s*while\>'
+  if a:line =~# '^\s*}\=\s*while\>'
     let [line, lnum] = s:GetDoLine(a:line, a:lnum, a:lnum)
-  elseif a:line =~ '\s*}\=\s*else\>'
+  elseif a:line =~# '\s*}\=\s*else\>'
     let [line, lnum] = s:GetIfLine(a:line, a:lnum)
   elseif a:line =~ '^\s*}' || a:line =~ '\S\+\s*}\s*\%(#.*\)\=$'
     let [line, lnum] = s:GetStartBraceLine(a:line, a:lnum)
@@ -177,7 +177,7 @@ function s:GetStartBraceLine(line, lnum)
   let line = a:line
   let lnum = a:lnum
   let [line, lnum] = s:GetBracePairLine(line, lnum)
-  if line =~ '^\s*}\=\s*else\>'
+  if line =~# '^\s*}\=\s*else\>'
     let [line, lnum] = s:GetIfLine(line, lnum)
   endif
 
@@ -216,8 +216,8 @@ endfunction
 function s:GetIfLine(line, lnum)
   let save_cursor = getpos(".")
   call cursor(a:lnum, 1)
-  let lnum = searchpair('\<if\>', '', '\<else\>', 'bW',
-        \ 'getline(".") =~ "else\\s\\+if" ' .
+  let lnum = searchpair('\C\<if\>', '', '\C\<else\>', 'bW',
+        \ 'getline(".") =~# "else\\s\\+if" ' .
         \ '|| indent(line(".")) > indent(a:lnum) ' .
         \ '|| s:InsideAwkItemOrCommentStr()')
   call setpos('.', save_cursor)
@@ -254,9 +254,9 @@ endfunction
 function s:SearchDoLoop(snum)
   let lnum = 0
   let onum = 0
-  while search('^\s*do\>', 'ebW')
+  while search('\C^\s*do\>', 'ebW')
     let save_cursor = getpos(".")
-    let lnum = searchpair('\s*\<do\>', '', '\s*}\=\s*while\>', 'W',
+    let lnum = searchpair('\C\s*\<do\>', '', '\C\s*}\=\s*while\>', 'W',
           \ 'indent(line(".")) > indent(get(save_cursor, 1)) ' .
           \ '|| s:InsideAwkItemOrCommentStr()', a:snum)
     if lnum < onum || lnum < 1
@@ -297,14 +297,14 @@ function s:NoClosedBracePair(lnum)
 endfunction
 
 function s:CurrentElseIndent(line, lnum, pline, pnum)
-  if a:line =~ '^\s*\%(if\|else\s\+if\)\s*(.*)\s*\%([^#].*\)'
+  if a:line =~# '^\s*\%(if\|else\s\+if\)\s*(.*)\s*\%([^#].*\)'
         \ && a:line !~ '{\s*\%(#.*\)\=$'
     let ind = indent(a:lnum)
-  elseif a:line =~ '^\s*else\>\s\+\%([^#].*\)' && a:line !~ '{\s*\%(#.*\)\=$'
+  elseif a:line =~# '^\s*else\>\s\+\%([^#].*\)' && a:line !~ '{\s*\%(#.*\)\=$'
     let ind = indent(a:lnum) - &sw
-  elseif a:pline =~ '^\s*\%(if\|}\=\s*else\s\+if\)\s*(.*)\s*\%(#.*\)\=$'
+  elseif a:pline =~# '^\s*\%(if\|}\=\s*else\s\+if\)\s*(.*)\s*\%(#.*\)\=$'
     let ind = indent(a:pnum)
-  elseif a:pline =~ '^\s*\%(}\s*\)\=else\>\s*\%(#.*\)\=$'
+  elseif a:pline =~# '^\s*\%(}\s*\)\=else\>\s*\%(#.*\)\=$'
     let ind = indent(a:pnum) - &sw
   else
     let ind = indent(get(s:GetIfLine(a:line, a:lnum), 1))
@@ -319,17 +319,22 @@ function s:InsideAwkItemOrCommentStr()
   let sum = 0
   let slash = 0
   let dquote = 0
+  let bracket = 0
   while sum < cnum
     let str = strpart(line, sum, 1)
     if str =~ '#' && !slash && !dquote
       return 1
+    elseif str =~ '[' && (slash || dquote) && !bracket && laststr !~ '\\'
+      let bracket = 1
+    elseif str =~ ']' && (slash || dquote) && bracket && laststr !~ '\\'
+      let bracket = 0
     elseif str =~ '/' && !slash && !dquote
       let slash = 1
-    elseif str =~ '/' && slash && laststr !~ '\\'
+    elseif str =~ '/' && slash && laststr !~ '\\' && !bracket
       let slash = 0
     elseif str =~ '"' && !dquote && !slash
       let dquote = 1
-    elseif str =~ '"' && dquote && laststr !~ '\\'
+    elseif str =~ '"' && dquote && laststr !~ '\\' && !bracket
       let dquote = 0
     endif
     let laststr = str
