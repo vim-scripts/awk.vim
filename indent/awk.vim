@@ -1,8 +1,8 @@
 " Vim indent file
 " Language:        AWK Script
 " Maintainer:      Clavelito <maromomo@hotmail.com>
-" Id:              $Date: 2013-02-10 20:28:09+09 $
-"                  $Revision: 1.18 $
+" Id:              $Date: 2013-04-22 12:35:05+09 $
+"                  $Revision: 1.19 $
 
 
 if exists("b:did_indent")
@@ -324,6 +324,9 @@ function s:InsideAwkItemOrCommentStr()
     let str = strpart(line, sum, 1)
     if str =~ '#' && !slash && !dquote
       return 1
+    elseif str =~ ')' && slash && !dquote && !bracket
+          \ && strpart(line, sum) =~ ')\s*{\s*\%(#.*\)\=$'
+      let slash = 0
     elseif str =~ '[' && (slash || dquote) && !bracket && laststr !~ '\\'
       let bracket = 1
     elseif str =~ ']' && (slash || dquote) && bracket && laststr !~ '\\'
