@@ -1,8 +1,8 @@
 " Vim indent file
 " Language:        AWK Script
 " Maintainer:      Clavelito <maromomo@hotmail.com>
-" Id:              $Date: 2013-06-22 16:48:03+09 $
-"                  $Revision: 1.38 $
+" Id:              $Date: 2013-07-09 20:27:21+09 $
+"                  $Revision: 1.39 $
 
 
 if exists("b:did_indent")
@@ -51,7 +51,7 @@ function GetAwkIndent()
 endfunction
 
 function s:ContinueLineIndent(line, lnum)
-  let [pline, pnum, line, lnum, ind] = s:PreContinueLine(a:line, a:lnum)
+  let [pline, line, ind] = s:PreContinueLine(a:line, a:lnum)
   if line =~ '(\s*\%(\S\+\s*,\s*\)\+\%(#.*\)\=$'
         \ || line =~ '(\s*\%(\S\+\s*,\s*\)\+\\$'
     let ind = s:GetMatchWidth(line, '(')
@@ -64,9 +64,9 @@ function s:ContinueLineIndent(line, lnum)
   elseif line =~# '^\s*\%(if\|else\s\+if\|for\|}\=\s*while\)\>'
         \ && line =~ '\\$\|\%(&&\|||\)\s*\%(#.*\)\=$'
     let ind = ind + &sw * 2
-  elseif pline !~ '\\$' && line =~ '\\$' && ind
+  elseif ind && pline !~ '\\$' && line =~ '\\$'
     let ind = ind + &sw
-  elseif pline =~ '\\$' && line !~ '\\$\|\%(&&\|||\|,\)\s*\%(#.*\)\=$' && ind
+  elseif ind && pline =~ '\\$' && line !~ '\\$\|\%(&&\|||\|,\)\s*\%(#.*\)\=$'
     let ind = ind - &sw
   endif
 
@@ -74,15 +74,17 @@ function s:ContinueLineIndent(line, lnum)
 endfunction
 
 function s:MorePrevLineIndent(pline, pnum, line, lnum, ind)
-  if a:line =~ '\\$\|\%(&&\|||\|,\)\s*\%(#.*\)\=$'
+  if !a:pnum || a:line =~ '\\$\|\%(&&\|||\|,\)\s*\%(#.*\)\=$'
     return a:ind
   endif
 
   let [pline, pnum, ind] = s:PreMorePrevLine(a:pline, a:pnum, a:line, a:lnum)
-  while pline =~# '^\s*\%(if\|else\s\+if\|for\|while\)\s*(.*)\s*\%(#.*\)\=$'
+  while pnum
+        \ &&
+        \ (pline =~# '^\s*\%(if\|else\s\+if\|for\|while\)\s*(.*)\s*\%(#.*\)\=$'
         \ || pline =~# '^\s*}\=\s*else\>\s*\%(#.*\)\=$'
         \ || pline =~# '^\s*do\>\s*\%(#.*\)\=$'
-        \ || pline =~# '^\s*}\s*\%(else\s\+if\|while\)\s*(.*)\s*\%(#.*\)\=$'
+        \ || pline =~# '^\s*}\s*\%(else\s\+if\|while\)\s*(.*)\s*\%(#.*\)\=$')
     let ind = indent(pnum)
     if pline =~# '^\s*do\>\s*\%(#.*\)\=$'
           \ && s:NoClosedPair(pnum, '\C\<do\>', '\C\<while\>', a:lnum)
@@ -151,19 +153,22 @@ function s:PreContinueLine(line, lnum)
   let [pline, pnum] = s:SkipCommentLine(pline, pnum)
   let ind = indent(lnum)
 
-  return [pline, pnum, line, lnum, ind]
+  return [pline, line, ind]
 endfunction
 
 function s:JoinContinueLine(line, lnum, item, prev)
   if a:prev && s:GetPrevNonBlank(a:lnum)
     let lnum = s:prev_lnum
     let line = getline(lnum)
+  elseif a:prev
+    let lnum = 0
+    let line = ""
   else
     let line = a:line
     let lnum = a:lnum
   endif
   let [line, lnum] = s:SkipCommentLine(line, lnum)
-  while s:GetPrevNonBlank(lnum)
+  while lnum && s:GetPrevNonBlank(lnum)
     let pline = getline(s:prev_lnum)
     if pline !~ a:item
       break
@@ -171,7 +176,7 @@ function s:JoinContinueLine(line, lnum, item, prev)
     let lnum = s:prev_lnum
     let line = pline . line
   endwhile
-  unlet s:prev_lnum
+  unlet! s:prev_lnum
 
   return [line, lnum]
 endfunction
@@ -179,11 +184,11 @@ endfunction
 function s:SkipCommentLine(line, lnum)
   let line = a:line
   let lnum = a:lnum
-  while line =~ '^\s*#' && s:GetPrevNonBlank(lnum)
+  while lnum && line =~ '^\s*#' && s:GetPrevNonBlank(lnum)
     let lnum = s:prev_lnum
     let line = getline(lnum)
   endwhile
-  unlet s:prev_lnum
+  unlet! s:prev_lnum
 
   return [line, lnum]
 endfunction
@@ -231,7 +236,7 @@ endfunction
 function s:GetStartPairLine(line, item1, item2, lnum)
   let save_cursor = getpos(".")
   let lnum = search(a:item1, 'cbW', a:lnum)
-  while s:InsideAwkItemOrCommentStr() && lnum
+  while lnum && s:InsideAwkItemOrCommentStr()
     let lnum = search(a:item1, 'bW', a:lnum)
   endwhile
   if lnum
@@ -263,7 +268,7 @@ function s:GetIfLine(line, lnum)
   if lnum > 0
     let line = getline(lnum)
     let nnum = lnum
-    while line =~ '\\$\|\%(&&\|||\)\s*\%(#.*\)\=$'
+    while nnum && line =~ '\\$\|\%(&&\|||\)\s*\%(#.*\)\=$'
       let nnum = nextnonblank(nnum + 1)
       let nline = getline(nnum)
       let line = line . nline
@@ -321,7 +326,7 @@ function s:NoClosedPair(lnum, item1, item2, stop)
   let save_cursor = getpos(".")
   call cursor(a:lnum, 1)
   let snum = search(a:item1, 'cW', a:stop)
-  while s:InsideAwkItemOrCommentStr() && snum
+  while snum && s:InsideAwkItemOrCommentStr()
     let snum = search(a:item1, 'W', a:stop)
   endwhile
   if snum
