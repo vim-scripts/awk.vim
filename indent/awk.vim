@@ -1,8 +1,8 @@
 " Vim indent file
 " Language:        AWK Script
 " Maintainer:      Clavelito <maromomo@hotmail.com>
-" Id:              $Date: 2013-07-09 20:27:21+09 $
-"                  $Revision: 1.39 $
+" Id:              $Date: 2013-08-17 20:58:46+09 $
+"                  $Revision: 1.40 $
 
 
 if exists("b:did_indent")
@@ -74,7 +74,7 @@ function s:ContinueLineIndent(line, lnum)
 endfunction
 
 function s:MorePrevLineIndent(pline, pnum, line, lnum, ind)
-  if !a:pnum || a:line =~ '\\$\|\%(&&\|||\|,\)\s*\%(#.*\)\=$'
+  if a:line =~ '\\$\|\%(&&\|||\|,\)\s*\%(#.*\)\=$'
     return a:ind
   endif
 
