@@ -1,8 +1,8 @@
 " Vim indent file
 " Language:        AWK Script
 " Maintainer:      Clavelito <maromomo@hotmail.com>
-" Id:              $Date: 2013-08-17 20:58:46+09 $
-"                  $Revision: 1.40 $
+" Id:              $Date: 2014-01-07 12:49:27+09 $
+"                  $Revision: 1.46 $
 
 
 if exists("b:did_indent")
@@ -11,7 +11,7 @@ endif
 let b:did_indent = 1
 
 setlocal indentexpr=GetAwkIndent()
-setlocal indentkeys-=:,0#
+setlocal indentkeys-=0#
 
 if exists("*GetAwkIndent")
   finish
@@ -125,6 +125,8 @@ function s:PrevLineIndent(line, lnum, stop, ind)
   elseif a:line =~# '^\s*\%(function\s\+\)\=\h\w*('
         \ && a:line =~ '\%(,\s*\)\@<!\\$' && a:lnum != a:stop
     let ind = s:GetMatchWidth(a:line, '(')
+  elseif a:line =~# '^\s*\(case\|default\)\>'
+    let ind = ind + &sw
   endif
 
   return ind
@@ -133,14 +135,18 @@ endfunction
 function s:CurrentLineIndent(cline, line, lnum, pline, pnum, ind)
   let ind = a:ind
   if a:cline =~ '^\s*}'
-    let ind = indent(get(s:GetStartPairLine(a:cline, '}', '{', v:lnum), 1))
+    let ind = ind - &sw
   elseif a:cline =~ '^\s*{\s*\%(#.*\)\=$'
         \ &&
         \ (a:line =~# '^\s*\%(if\|else\s\+if\|while\|for\)\s*(.*)\s*\%(#.*\)\=$'
-        \ || a:line =~# '^\s*\%(else\|do\)\s*\%(#.*\)\=$')
+        \ || a:line =~# '^\s*\%(else\|do\)\s*\%(#.*\)\=$'
+        \ || a:line =~# '^\s*\(case\|default\)\>.*:\s*\%(#.*\)\=$')
     let ind = ind - &sw
   elseif a:cline =~# '^\s*else\>'
     let ind = s:CurrentElseIndent(a:line, a:lnum, a:pline, a:pnum)
+  elseif a:cline =~# '^\s*\(case\|default\)\>'
+        \ && a:line !~ '\({\|}\)\s*\%(#.*\)\=$'
+    let ind = ind - &sw
   endif
 
   return ind
@@ -235,6 +241,7 @@ endfunction
 
 function s:GetStartPairLine(line, item1, item2, lnum)
   let save_cursor = getpos(".")
+  call cursor(a:lnum, len(a:line))
   let lnum = search(a:item1, 'cbW', a:lnum)
   while lnum && s:InsideAwkItemOrCommentStr()
     let lnum = search(a:item1, 'bW', a:lnum)
